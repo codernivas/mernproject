@@ -7,6 +7,11 @@ const PORT = 6005
 const session = require("express-session")
 const userdb = require("./model/userSchema")
 const passport = require("passport")
+const path = require("path")
+const empCollection = require("./model/model")
+const template_path = path.join(__dirname, "./template/views")
+app.set("view engine", "hbs")
+app.set("views", template_path)
 const OAuth2Strategy = require("passport-google-oauth2").Strategy
 const clientid =
   "982960140440-41u3mglhr718qhinc55392008p2t8lou.apps.googleusercontent.com"
@@ -21,6 +26,31 @@ app.use(
 
 app.use(express.json())
 
+// app.get("/", (req, res) => {
+//   res.send("hello world")
+// })
+app.use(express.urlencoded({ extended: false }))
+app.get("/", (req, res) => {
+  res.render("index")
+})
+app.post("/register", async (req, res) => {
+  try {
+    const password = req.body.password
+    if (password) {
+      const empData = new empCollection({
+        email: req.body.email,
+        password: req.body.password,
+        displayName: req.body.displayName,
+      })
+      const postData = await empData.save()
+      res.send(postData)
+    } else {
+      res.send("password is incorrect")
+    }
+  } catch (error) {
+    res.setDefaultEncoding(error)
+  }
+})
 //setup session
 
 app.use(
@@ -35,32 +65,34 @@ app.use(
 
 app.use(passport.initialize())
 app.use(passport.session())
-passport.use(new OAuth2Strategy({
-  clientID: clientid,
-  clientSecret: clientsecret,
-  callbackURL: "/auth/google/callback",
-  scope: ["profile", "email"]
-},
-async (accessToken, refreshToken, profile, done) => {
-  console.log("profile", profile)
-  try {
-    let user = await userdb.findOne({ googleId: profile.id })
-    if (!user) {
-      user = new userdb({
-        googleId: profile.id,
-        displayName: profile.displayName,
-        email: profile.emails[0].value,
-        image: profile.photos[0].value,
-      })
-      await user.save()
+passport.use(
+  new OAuth2Strategy(
+    {
+      clientID: clientid,
+      clientSecret: clientsecret,
+      callbackURL: "/auth/google/callback",
+      scope: ["profile", "email"],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      console.log("profile", profile)
+      try {
+        let user = await userdb.findOne({ googleId: profile.id })
+        if (!user) {
+          user = new userdb({
+            googleId: profile.id,
+            displayName: profile.displayName,
+            email: profile.emails[0].value,
+            image: profile.photos[0].value,
+          })
+          await user.save()
+        }
+        return done(null, user)
+      } catch (error) {
+        return done(error, null)
+      }
     }
-    return done(null, user)
-  } catch (error) {
-    return done(error, null)
-  }
-}
-));
-
+  )
+)
 
 passport.serializeUser((user, done) => {
   done(null, user)
@@ -69,13 +101,25 @@ passport.deserializeUser((user, done) => {
   done(null, user)
 })
 
-app.get(
-  "/auth/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-  })
-);
-
+// app.get(
+//   "/auth/google",
+//   passport.authenticate("google", {
+//     scope: ["profile", "email"],
+//   })
+// )
+app.get("/auth/google", (req, res, next) => {
+  // Clear session before initiating Google authentication
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Error destroying session:", err);
+      return next(err);
+    }
+    // Initiate Google authentication
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+    })(req, res, next);
+  });
+});
 
 app.get(
   "/auth/google/callback",
@@ -84,9 +128,26 @@ app.get(
     failureRedirect: "http://localhost:3000/login",
   })
 )
+app.get("/login/sucess", async (req, res) => {
+  if (req.user) {
+    res.status(200).json({ message: "user Login", user: req.user })
+  } else {
+    res.status(400).json({ message: "Not authorized" })
+  }
+})
 // app.get("/", (req, res) => {
 //   res.status(200).json("server start")
 // })
+app.get("/logout", (req, res) => {
+  req.logout(function(err) {
+    if (err) {
+      console.error(err);
+      return next(err);
+    }
+    res.redirect("/");
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`server start at port no ${PORT}`)
 })
