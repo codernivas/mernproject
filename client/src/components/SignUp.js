@@ -1,22 +1,36 @@
 import React, { useState } from "react";
-import axios from "axios"; // Import axios for making HTTP requests
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      // Make HTTP POST request to the signup API
-      const response = await axios.post("http://localhost:6005/register", {
-        email,
-        password,
+      const response = await fetch("http://localhost:6005/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email,
+          displayName,
+          password
+        })
       });
-      console.log(response.data); // Log the response from the server
+      if (response.ok) {
+        // Registration successful
+        console.log("Registration successful");
+        // Redirect or show success message
+      } else {
+        // Registration failed
+        console.error("Registration failed");
+        // Handle the error, e.g., show error message to the user
+      }
     } catch (error) {
-      console.error("Error signing up:", error);
+      // Handle network error or other exceptions
+      console.error("Error during registration:", error);
     }
   };
 
@@ -25,6 +39,18 @@ const SignUp = () => {
       <h2>Register</h2>
       <form onSubmit={handleSubmit}>
         <div>
+          <label htmlFor="displayName">
+            <strong>Name</strong>
+          </label>
+          <input
+            type="text"
+            placeholder="Name"
+            name="displayName"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </div>
+        <div>
           <label htmlFor="email">
             <strong>Email</strong>
           </label>
@@ -32,7 +58,7 @@ const SignUp = () => {
             type="text"
             placeholder="Email"
             name="email"
-            value={email} // Set value attribute to the state variable
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
@@ -44,11 +70,11 @@ const SignUp = () => {
             type="password"
             placeholder="Password"
             name="password"
-            value={password} // Set value attribute to the state variable
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <button type="submit">Register</button> {/* Moved button inside the form */}
+        <button type="submit">Register</button>
       </form>
       <p>Already have an account?</p>
       <a href="/login">Login</a>

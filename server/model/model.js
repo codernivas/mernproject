@@ -1,10 +1,8 @@
 const mongoose = require("mongoose")
+const bcrypt = require("bcrypt")
 const empSchema = new mongoose.Schema(
   {
-    displayName: {
-      type: String,
-      required: true,
-    },
+    displayName: String,
     email: {
       type: String,
       required: true,
@@ -17,5 +15,7 @@ const empSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
+
+
 const empCollection = new mongoose.model("empcollection", empSchema)
 module.exports = empCollection

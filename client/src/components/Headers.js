@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"
 import axios from "axios"
 const Headers = () => {
   const [userdata, setUserdata] = useState({})
-  console.log("Response", userdata.displayName)
+  console.log("Response", userdata.email_verified)
   const getUser = async () => {
     try {
       const response = await axios.get("http://localhost:6005/login/sucess", {
