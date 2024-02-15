@@ -133,12 +133,6 @@ passport.deserializeUser((user, done) => {
   done(null, user)
 })
 
-// app.get(
-//   "/auth/google",
-//   passport.authenticate("google", {
-//     scope: ["profile", "email"],
-//   })
-// )
 
 app.get("/auth/google", (req, res, next) => {
   // Clear session before initiating Google authentication
@@ -169,6 +163,18 @@ app.get("/login/sucess", async (req, res) => {
   }
 })
 
+//logout 
+app.post("/logout", async (req, res) => {
+  try {
+    // Clear the token from client side by setting an expired token
+    res.clearCookie("token");
+
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Error occurred during logout:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 // app.get("/", (req, res) => {
 //   res.status(200).json("server start")
 // })
